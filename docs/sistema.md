@@ -43,7 +43,7 @@ O sistema foi projetado visando a integração com plataformas de aquisição de
 
 ## Diagrama de Blocos
 
-![Diagrama de blocos do sistema](./images/sistema-diagrama.png)
+![Diagrama de blocos do sistema](/images/sistema-diagrama.png)
 
 Fluxo geral do sistema:
 
