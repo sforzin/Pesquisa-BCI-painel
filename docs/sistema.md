@@ -45,9 +45,6 @@ O sistema foi projetado visando a integração com plataformas de aquisição de
 
 A Figura 1 apresenta a arquitetura geral do sistema de estimulação, evidenciando a divisão entre os módulos de configuração, geração e controle dos estímulos.
 
-<p align="center">
-![Diagrama de blocos do sistema](/images/sistema-diagrama.png)
-</p>
-<p align="center">
-  <em>Figura 1 – Diagrama de blocos do sistema de estimulação BCI-SSVEP.</em>
-</p>
+| ![Diagrama de blocos](/images/diagrama_blocos.png) |
+|:--:|
+| *Figura 1 – Diagrama de blocos do sistema de estimulação BCI-SSVEP.* |
