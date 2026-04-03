@@ -41,7 +41,6 @@ O sistema foi projetado visando a integração com plataformas de aquisição de
 
 ---
 
-## Diagrama de blocos
+## Diagrama de blocos do sistema de estimulação
 
-![Diagrama de blocos](/images/sistema-diagrama.png)
-*Diagrama de blocos do sistema de estimulação BCI-SSVEP.*
+|![Diagrama de blocos](/images/sistema-diagrama.png)|
