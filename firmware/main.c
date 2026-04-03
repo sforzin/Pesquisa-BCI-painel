@@ -1,28 +1,28 @@
-/**
+Ôªø/**
  * _________________________________________________________
  *
  * @file main.c
- * ExecuÁ„o dos sinais de estimulaÁ„o SSVEP
+ * Execu√ß√£o dos sinais de estimula√ß√£o SSVEP
  * _________________________________________________________
  *
  * DETALHES
- * Firmware respons·vel pela apresentaÁ„o dos sinais de estimulaÁ„o visual no paradigma SSVEP.
+ * Firmware respons√°vel pela apresenta√ß√£o dos sinais de estimula√ß√£o visual no paradigma SSVEP.
  *
- * O sistema realiza a leitura de uma LUT (Look-Up Table) armazenada na memÛria
- * Flash, contendo as amostras dos sinais de estimulaÁ„o previamente gerados.
+ * O sistema realiza a leitura de uma LUT (Look-Up Table) armazenada na mem√≥ria
+ * Flash, contendo as amostras dos sinais de estimula√ß√£o previamente gerados.
  *
- * A temporizaÁ„o È realizada por meio de interrupÁıes de hardware (Timer1), na qual
- * a duraÁ„o do tratamento da interrupÁ„o corresponde ao perÌodo de amostragem do
+ * A temporiza√ß√£o √© realizada por meio de interrup√ß√µes de hardware (Timer1), na qual
+ * a dura√ß√£o do tratamento da interrup√ß√£o corresponde ao per√≠odo de amostragem do
  * sinal salvo.
  *
  * Fluxo:
  * - Apresenta amostra atual (RAM)
- * - Carrega prÛxima amostra (FLASH ? RAM)
+ * - Carrega pr√≥xima amostra (FLASH ‚Üí RAM)
  *
  * Funcionalidades:
- * - Controle de janelas de estimulaÁ„o
- * - PerÌodos de descanso entre estÌmulos
- * - ComunicaÁ„o UART
+ * - Controle de janelas de estimula√ß√£o
+ * - Per√≠odos de descanso entre est√≠mulos
+ * - Comunica√ß√£o UART
  *
  * Plataforma: ATmega2560
  * Projeto: BCI-SSVEP DSPCOM
@@ -32,14 +32,14 @@
 
 /**
  * _________________________________________________________
- * ATEN«√O
+ * ATEN√á√ÉO
  * _________________________________________________________
  *
- * Este sistema depende de temporizaÁ„o precisa.
+ * Este sistema depende de temporiza√ß√£o precisa.
  *
- * AlteraÁıes crÌticas:
+ * Altera√ß√µes cr√≠ticas:
  * - ISRs
- * - Ordem de execuÁ„o
+ * - Ordem de execu√ß√£o
  * - Timers
  *
  * Validar experimentalmente.
@@ -63,42 +63,42 @@
 
 /**
  * _________________________________________________________
- * VARI¡VEIS GLOBAIS
+ * VARI√ÅVEIS GLOBAIS
  * _________________________________________________________
  */
 
-// Vari·veis de controle de leitura da LUT
+// Vari√°veis de controle de leitura da LUT
 uint32_t lut_add = 0x00;
-/* Armazena o endereÁo base da Look-Up Table (LUT) na memÛria.
+/* Armazena o endere√ßo base da Look-Up Table (LUT) na mem√≥ria.
 * Utilizado como ponteiro para acesso sequencial aos dados
-* de estimulaÁ„o armazenados em Flash.
+* de estimula√ß√£o armazenados em Flash.
 */
 uint8_t ctrl = 0x00;
 /*
-* Vari·vel de controle geral do sistema.
+* Vari√°vel de controle geral do sistema.
 * Utilizada como flag de estado no controle do fluxo
-* de apresentaÁ„o do sinal no algoritmo principal.
+* de apresenta√ß√£o do sinal no algoritmo principal.
 */
 uint8_t upd_end = 0x00;
 /*
-* Indica condiÁ„o de tÈrmino ou atualizaÁ„o de leitura da LUT.
-* Utilizada para controle de fim de ciclo ou reinÌcio da sequÍncia.
+* Indica condi√ß√£o de t√©rmino ou atualiza√ß√£o de leitura da LUT.
+* Utilizada para controle de fim de ciclo ou rein√≠cio da sequ√™ncia.
 */
 uint16_t part_index;
 uint8_t part_offset;
 uint8_t value;
 
-// Vari·veis data buffer das portas
+// Vari√°veis data buffer das portas
 uint8_t data_a;
 uint8_t data_c;
 uint8_t data_f;
 uint8_t data_k;
 uint8_t data_l;
 
-// Vari·vel para controle entre janelas (PerÌodo de descanso)
+// Vari√°vel para controle entre janelas (Per√≠odo de descanso)
 uint8_t wait = 0x00;
 
-// Vari·veis para recebimento dos dados da UART
+// Vari√°veis para recebimento dos dados da UART
 volatile unsigned char windows_control;
 unsigned char buffer_index = 0;
 unsigned char buffer_data_vec[3];
@@ -106,7 +106,7 @@ char data_UART;
 
 /**
  * _________________________________________________________
- * CONFIGURA«√O
+ * CONFIGURA√á√ÉO
  * _________________________________________________________
  */
 
@@ -120,7 +120,7 @@ void config() {
 	
 	/* _________________________________________________________
 	 *
-	 * UCSR0A ñ Registrador de controle e status A da USART0
+	 * UCSR0A ‚Äì Registrador de controle e status A da USART0
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
@@ -128,16 +128,16 @@ void config() {
 	 *        0     0     0     0     0     0     1     0
 	 *
 	 * U2X0 = 1:
-	 * Habilita modo double speed, aumentando a precis„o do baud rate.
+	 * Habilita modo double speed, aumentando a precis√£o do baud rate.
 	 *
-	 * Os demais bits n„o s„o utilizados diretamente.
+	 * Os demais bits n√£o s√£o utilizados diretamente.
 	 * _________________________________________________________
 	 */
-	UCSR0A = 0x02;
+	 UCSR0A = 0x02;
 	
 	/* _________________________________________________________
 	 *
-	 * UCSR0B ñ Registrador de controle e status B da USART0
+	 * UCSR0B ‚Äì Registrador de controle e status B da USART0
 	 *
 	 * Bit:   7      6      5      4      3      2      1      0
 	 *       -----------------------------------------------------
@@ -145,7 +145,7 @@ void config() {
 	 *        1      0      0      1      1      0      0      0
 	 *
 	 * RXCIE0 = 1:
-	 * Habilita interrupÁ„o de recepÁ„o UART.
+	 * Habilita interrup√ß√£o de recep√ß√£o UART.
 	 *
 	 * RXEN0 = 1:
 	 * Habilita o receptor UART.
@@ -153,14 +153,14 @@ void config() {
 	 * TXEN0 = 1:
 	 * Habilita o transmissor UART.
 	 *
-	 * Os demais bits n„o s„o utilizados.
+	 * Os demais bits n√£o s√£o utilizados.
 	 * _________________________________________________________
 	 */
-    UCSR0B = 0x98;
+     UCSR0B = 0x98;
 	
 	/* _________________________________________________________
 	 *
-	 * UCSR0C ñ Registrador de controle e status C da USART0
+	 * UCSR0C ‚Äì Registrador de controle e status C da USART0
 	 *
 	 * Bit:   7       6       5      4      3      2      1      0
 	 *       -----------------------------------------------------
@@ -177,17 +177,17 @@ void config() {
 	 * Sem paridade.
 	 * _________________________________________________________
 	 */
-    UCSR0C = 0x06;
+     UCSR0C = 0x06;
 	
 	/* _________________________________________________________
 	 *
-	 * UBRR0 ñ Registrador de baud rate da USART0
+	 * UBRR0 ‚Äì Registrador de baud rate da USART0
 	 *
 	 * Valor: 0x00CF
 	 *
 	 * Baud rate configurado: 9600 bps
 	 *
-	 * FÛrmula:
+	 * F√≥rmula:
 	 * Baud = F_CPU / (8 * (UBRR + 1))
 	 *
 	 * Considerando:
@@ -196,110 +196,110 @@ void config() {
 	 *
 	 * _________________________________________________________
 	 */
-    UBRR0H = 0x00;
-    UBRR0L = 0xCF;
+     UBRR0H = 0x00;
+     UBRR0L = 0xCF;
 	
 	/* _________________________________________________________
 	 *
-	 * DDRA ñ Registrador de direÁ„o de dados da porta A
+	 * DDRA ‚Äì Registrador de dire√ß√£o de dados da porta A
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
 	 *        1     1     1     1     1     1     1     1
 	 *
-	 * Todos os pinos configurados como saÌda.
+	 * Todos os pinos configurados como sa√≠da.
 	 *
-	 * UtilizaÁ„o:
-	 * Envio de sinais digitais de estimulaÁ„o SSVEP.
+	 * Utiliza√ß√£o:
+	 * Envio de sinais digitais de estimula√ß√£o SSVEP.
 	 *
 	 * _________________________________________________________
 	 */
-    DDRA |= 0xFF;
+     DDRA |= 0xFF;
 	
 	/* _________________________________________________________
 	 *
-	 * DDRC ñ Registrador de direÁ„o de dados da porta C
+	 * DDRC ‚Äì Registrador de dire√ß√£o de dados da porta C
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
 	 *        1     1     1     1     1     1     1     1
 	 *
-	 * Todos os pinos configurados como saÌda.
+	 * Todos os pinos configurados como sa√≠da.
 	 *
-	 * UtilizaÁ„o:
-	 * Envio de sinais digitais de estimulaÁ„o SSVEP.
+	 * Utiliza√ß√£o:
+	 * Envio de sinais digitais de estimula√ß√£o SSVEP.
 	 *
 	 * _________________________________________________________
 	 */
-    DDRC |= 0xFF;
+     DDRC |= 0xFF;
 	
     /* _________________________________________________________
 	 *
-	 * DDRF ñ Registrador de direÁ„o de dados da porta F
+	 * DDRF ‚Äì Registrador de dire√ß√£o de dados da porta F
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
 	 *        1     1     1     1     1     1     1     1
 	 *
-	 * Todos os pinos configurados como saÌda.
+	 * Todos os pinos configurados como sa√≠da.
 	 *
-	 * UtilizaÁ„o:
-	 * Envio de sinais digitais de estimulaÁ„o SSVEP.
+	 * Utiliza√ß√£o:
+	 * Envio de sinais digitais de estimula√ß√£o SSVEP.
 	 *
 	 * _________________________________________________________
 	 */
-    DDRF |= 0xFF;
+     DDRF |= 0xFF;
 	
     /* _________________________________________________________
 	 *
-	 * DDRK ñ Registrador de direÁ„o de dados da porta K
+	 * DDRK ‚Äì Registrador de dire√ß√£o de dados da porta K
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
 	 *        1     1     1     1     1     1     1     1
 	 *
-	 * Todos os pinos configurados como saÌda.
+	 * Todos os pinos configurados como sa√≠da.
 	 *
-	 * UtilizaÁ„o:
-	 * Envio de sinais digitais de estimulaÁ„o SSVEP.
+	 * Utiliza√ß√£o:
+	 * Envio de sinais digitais de estimula√ß√£o SSVEP.
 	 *
 	 * _________________________________________________________
 	 */
-    DDRK |= 0xFF;
+     DDRK |= 0xFF;
 	
     /* _________________________________________________________
 	 *
-	 * DDRL ñ Registrador de direÁ„o de dados da porta L
+	 * DDRL ‚Äì Registrador de dire√ß√£o de dados da porta L
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
 	 *        1     1     1     1     1     1     1     1
 	 *
-	 * Todos os pinos configurados como saÌda.
+	 * Todos os pinos configurados como sa√≠da.
 	 *
-	 * UtilizaÁ„o:
-	 * Envio de sinais digitais de estimulaÁ„o SSVEP.
+	 * Utiliza√ß√£o:
+	 * Envio de sinais digitais de estimula√ß√£o SSVEP.
 	 *
 	 * _________________________________________________________
 	 */
-    DDRL |= 0xFF;
+     DDRL |= 0xFF;
 
     /* _________________________________________________________
 	 *
-	 * DDRD ñ Registrador de direÁ„o de dados da porta D
+	 * DDRD ‚Äì Registrador de dire√ß√£o de dados da porta D
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
 	 *        0     0     0     0     0     0     0     1
 	 *
-	 * Todos os pinos configurados como saÌda.
+	 * Todos os pinos configurados como sa√≠da.
 	 *
-	 * UtilizaÁ„o:
-	 * Envio de sinais digitais de estimulaÁ„o SSVEP.
+	 * Utiliza√ß√£o:
+	 * Envio de sinais digitais de estimula√ß√£o SSVEP.
 	 *
 	 * _________________________________________________________
 	 */
-    DDRD = (1<<0);
+     DDRD = (1<<0);
     
 	/**
      * _________________________________________________________
@@ -309,7 +309,7 @@ void config() {
 	
 	/* _________________________________________________________
 	 *
-	 * TCCR1A ñ Registrador de controle A do Timer1
+	 * TCCR1A ‚Äì Registrador de controle A do Timer1
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
@@ -320,11 +320,11 @@ void config() {
 	 *
 	 * _________________________________________________________
 	 */
-    TCCR1A = 0x00;
+     TCCR1A = 0x00;
 	
 	/* _________________________________________________________
 	 *
-	 * TCCR1B ñ Registrador de controle B do Timer1
+	 * TCCR1B ‚Äì Registrador de controle B do Timer1
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
@@ -335,21 +335,21 @@ void config() {
 	 * Modo CTC (Clear Timer on Compare Match).
 	 *
 	 * CS11 = 1:
-	 * Prescaler = 8. **ATIVADA SOMENTE NO INICIO DA TEMPORIZA«√O
+	 * Prescaler = 8. **ATIVADA SOMENTE NO INICIO DA TEMPORIZA√á√ÉO
 	 *
-	 * FunÁ„o:
-	 * Define a frequÍncia de atualizaÁ„o dos estÌmulos.
+	 * Fun√ß√£o:
+	 * Define a frequ√™ncia de atualiza√ß√£o dos est√≠mulos.
 	 *
 	 * _________________________________________________________
 	 */
-    TCCR1B = (1 << WGM12);
+     TCCR1B = (1 << WGM12);
     
-	OCR1A = Ts;	// Valor do perÌodo de amostagem do sinal para o contador 
-    TCNT1 = 0;  // Zera o buffer do contador
+	 OCR1A = Ts;	// Valor do per√≠odo de amostagem do sinal para o contador 
+     TCNT1 = 0;  // Zera o buffer do contador
 	
 	/* _________________________________________________________
 	 *
-	 * TIMSK1 ñ Registrador de m·scara de interrupÁ„o do Timer1
+	 * TIMSK1 ‚Äì Registrador de m√°scara de interrup√ß√£o do Timer1
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
@@ -357,11 +357,11 @@ void config() {
 	 *        X     X      0    X     X       0       1      0
 	 *
 	 * OCIE1A = 1:
-	 * Habilita interrupÁ„o por comparaÁ„o A.
+	 * Habilita interrup√ß√£o por compara√ß√£o A.
 	 *
 	 * _________________________________________________________
 	 */
-    TIMSK1 |= (1 << OCIE1A);
+     TIMSK1 |= (1 << OCIE1A);
 	
 	/**
      * _________________________________________________________
@@ -371,7 +371,7 @@ void config() {
 	
 	/* _________________________________________________________
 	 *
-	 * TCCR3A ñ Registrador de controle A do Timer3
+	 * TCCR3A ‚Äì Registrador de controle A do Timer3
 	 *
 	 * Bit:   7      6      5      4     3     2     1     0
 	 *       -----------------------------------------------------
@@ -382,11 +382,11 @@ void config() {
 	 *
 	 * _________________________________________________________
 	 */
-    TCCR3A = 0x00;
+     TCCR3A = 0x00;
 	
 	/* _________________________________________________________
 	 *
-	 * TCCR3B ñ Registrador de controle B do Timer3
+	 * TCCR3B ‚Äì Registrador de controle B do Timer3
 	 *
 	 * Bit:   7     6     5     4     3     2     1     0
 	 *       -----------------------------------------------------
@@ -397,21 +397,21 @@ void config() {
 	 * Modo CTC.
 	 *
 	 * CS3[2:0] = 101:
-	 * Prescaler = 1024. **ATIVADA SOMENTE NO INICIO DA TEMPORIZA«√O
+	 * Prescaler = 1024. **ATIVADA SOMENTE NO INICIO DA TEMPORIZA√á√ÉO
 	 *
-	 * FunÁ„o:
-	 * Controle do tempo de descanso entre estÌmulos.
+	 * Fun√ß√£o:
+	 * Controle do tempo de descanso entre est√≠mulos.
 	 *
 	 * _________________________________________________________
 	 */
-    TCCR3B = (1 << WGM32);
+     TCCR3B = (1 << WGM32);
 	
-    OCR3A = rest_pause; // Valor do perÌodo de descanso para o contador
-    TCNT3 = 0;			// Zera o buffer do contador
+     OCR3A = rest_pause; // Valor do per√≠odo de descanso para o contador
+     TCNT3 = 0;			// Zera o buffer do contador
 	
 	/* _________________________________________________________
 	 *
-	 * TIMSK3 ñ Registrador de m·scara de interrupÁ„o do Timer3
+	 * TIMSK3 ‚Äì Registrador de m√°scara de interrup√ß√£o do Timer3
 	 *
 	 * Bit:   7     6     5     4     3      2      1     0
 	 *       -----------------------------------------------------
@@ -419,19 +419,19 @@ void config() {
 	 *        X     X     X     X     X      0      1     0
 	 *
 	 * OCIE3A = 1:
-	 * Habilita interrupÁ„o de comparaÁ„o do Timer3.
+	 * Habilita interrup√ß√£o de compara√ß√£o do Timer3.
 	 *
 	 * _________________________________________________________
 	 */
-    TIMSK3 |= (1 << OCIE3A);
+     TIMSK3 |= (1 << OCIE3A);
 
     /**
      * _________________________________________________________
-     * PRIMEIRA AMOSTRA (DescriÁ„o do algoritmo na ISR Timer 1)
+     * PRIMEIRA AMOSTRA (Descri√ß√£o do algoritmo na ISR Timer 1)
      * _________________________________________________________
      */
 	
-	PORTD = (1<<0); // MarcaÁ„o para cyton (FORA DA ESTIMULA«√O)
+	 PORTD = (1<<0); // Marca√ß√£o para cyton (FORA DA ESTIMULA√á√ÉO)
     while (!upd_end){
 		
         part_index  = lut_add >> 8;
@@ -462,25 +462,25 @@ void config() {
  */
 
 /**
- * Rotina de interrupÁ„o do Timer1 (Compare Match A)
+ * Rotina de interrup√ß√£o do Timer1 (Compare Match A)
  *
- * Respons·vel por:
- * - Atualizar as portas de saÌda com os dados atuais
- * - Percorrer a LUT armazenada na memÛria Flash
- * - Carregar novos dados para o prÛximo ciclo de saÌda
- * - Verificar o fim da execuÁ„o do sinal
+ * Respons√°vel por:
+ * - Atualizar as portas de sa√≠da com os dados atuais
+ * - Percorrer a LUT armazenada na mem√≥ria Flash
+ * - Carregar novos dados para o pr√≥ximo ciclo de sa√≠da
+ * - Verificar o fim da execu√ß√£o do sinal
  *
  * Funcionamento:
- * A cada interrupÁ„o:
- * 1. Os valores atuais s„o enviados ‡s portas
- * 2. S„o lidos 5 novos valores da LUT
- * 3. Cada valor È direcionado para uma porta especÌfica
+ * A cada interrup√ß√£o:
+ * 1. Os valores atuais s√£o enviados √†s portas
+ * 2. S√£o lidos 5 novos valores da LUT
+ * 3. Cada valor √© direcionado para uma porta espec√≠fica
  * 4. Ao final da LUT, o sistema reinicia e pausa o timer
  * _________________________________________________________
  */
 ISR(TIMER1_COMPA_vect) {
 
-    // Atualiza as portas de saÌda com os dados carregados
+    // Atualiza as portas de sa√≠da com os dados carregados
     PORTK = data_k;
     PORTA = data_a;
     PORTC = data_c;
@@ -489,24 +489,24 @@ ISR(TIMER1_COMPA_vect) {
 
     // Verifica se o final da LUT foi atingido
     if (lut_add >= signal_len) {
-        lut_add = 0;      // Reinicia Ìndice da LUT
+        lut_add = 0;      // Reinicia √≠ndice da LUT
         wait = 0x01;      // Sinaliza estado de descanso
         TCCR1B = 0x08;    // Para o Timer1 (sem clock)
     }
 
-    // Inicializa vari·veis de controle da leitura
+    // Inicializa vari√°veis de controle da leitura
     ctrl = 0x00;
     upd_end = 0;
 
     // Loop para leitura de 5 bytes da LUT
     while (!upd_end){
 
-        // Calcula Ìndice da partiÁ„o da LUT
+        // Calcula √≠ndice da parti√ß√£o da LUT
         part_index  = lut_add >> 8;
-        // Calcula offset dentro da partiÁ„o
+        // Calcula offset dentro da parti√ß√£o
         part_offset = lut_add & 0xFF;
 
-        // LÍ dado da memÛria Flash
+        // L√™ dado da mem√≥ria Flash
         value = pgm_read_byte_far((uint32_t)(&signal_parts[part_index][part_offset]));
 
         // Direciona o valor lido para a respectiva porta
@@ -521,8 +521,8 @@ ISR(TIMER1_COMPA_vect) {
             break;
         }
 
-        // AvanÁa controle e endereÁo da LUT
-        ctrl++; // Reset do indexador de atualizaÁ„o dos buffers acima
+        // Avan√ßa controle e endere√ßo da LUT
+        ctrl++; // Reset do indexador de atualiza√ß√£o dos buffers acima
         lut_add++;
     }
 }
@@ -534,20 +534,20 @@ ISR(TIMER1_COMPA_vect) {
  */
 
 /**
- * Rotina de interrupÁ„o do Timer3 (Compare Match A)
+ * Rotina de interrup√ß√£o do Timer3 (Compare Match A)
  *
- * Respons·vel por:
+ * Respons√°vel por:
  * - Controlar o tempo de descanso
- * - Sincronizar o reinÌcio do Timer1
- * - Gerenciar a vari·vel de controle de janelas (windows_control)
+ * - Sincronizar o rein√≠cio do Timer1
+ * - Gerenciar a vari√°vel de controle de janelas (windows_control)
  *
  * Funcionamento:
- * A cada interrupÁ„o:
- * 1. O Timer3 È interrompido
- * 2. Os contadores dos Timers 1 e 3 s„o resetados
- * 3. O contador de janelas È decrementado
+ * A cada interrup√ß√£o:
+ * 1. O Timer3 √© interrompido
+ * 2. Os contadores dos Timers 1 e 3 s√£o resetados
+ * 3. O contador de janelas √© decrementado
  * 4. Caso ainda existam janelas a serem executadas:
- *    - O Timer1 È reativado
+ *    - O Timer1 √© reativado
  * ________________________________________________________
  */
 ISR(TIMER3_COMPA_vect){
@@ -559,15 +559,15 @@ ISR(TIMER3_COMPA_vect){
     TCNT3 = 0;
     TCNT1 = 0;
 
-    // Decrementa o n˙mero de janelas restantes 
+    // Decrementa o n√∫mero de janelas restantes 
     windows_control--;
 
-    // Verifica se ainda h· janelas de estimulaÁ„o
+    // Verifica se ainda h√° janelas de estimula√ß√£o
     if (windows_control > 0){
 
-        // Reativa o Timer1 (Ou seja, uma nova janela de estimulaÁ„o)
+        // Reativa o Timer1 (Ou seja, uma nova janela de estimula√ß√£o)
         TCCR1B = 0x0A;
-		// Marca a estimulaÁ„o na prÛxima (primeira) amostra, assim como È feito nas configs
+		// Marca a estimula√ß√£o na pr√≥xima (primeira) amostra, assim como √© feito nas configs
         PORTD = 0x00; 
     }
 }
@@ -579,44 +579,44 @@ ISR(TIMER3_COMPA_vect){
  */
 
 /**
- * Rotina de interrupÁ„o da UART
+ * Rotina de interrup√ß√£o da UART
  *
- * Respons·vel por:
+ * Respons√°vel por:
  * - Receber dados da interface serial
  * - Armazenar os dados em buffer
  * - Interpretar comandos recebidos
- * - Inicializar a sequÍncia de estimulaÁ„o
+ * - Inicializar a sequ√™ncia de estimula√ß√£o
  *
  * Funcionamento:
  * A cada byte recebido:
- * 1. O dado È lido do registrador UDR0
- * 2. O mesmo dado È retransmitido (eco)
- * 3. O byte È armazenado em um buffer
- * 4. Ao receber o caractere '*', o comando È processado:
- *    - Converte os dois primeiros bytes em n˙mero inteiro
- *    - Define o n˙mero de janelas de estimulaÁ„o
+ * 1. O dado √© lido do registrador UDR0
+ * 2. O mesmo dado √© retransmitido (eco)
+ * 3. O byte √© armazenado em um buffer
+ * 4. Ao receber o caractere '*', o comando √© processado:
+ *    - Converte os dois primeiros bytes em n√∫mero inteiro
+ *    - Define o n√∫mero de janelas de estimula√ß√£o
  *    - Reinicia os timers
- *    - Inicia o Timer1 (estimulaÁ„o)
+ *    - Inicia o Timer1 (estimula√ß√£o)
  *
  * Formato esperado do comando:
  * [d1][d2]*
- * Exemplo: "25*" ? 25 janelas de estimulaÁ„o
+ * Exemplo: "25*" ‚Üí 25 janelas de estimula√ß√£o
  *
  * _________________________________________________________
  */
 ISR(USART0_RX_vect){
 
-    // LÍ dado recebido da UART
+    // L√™ dado recebido da UART
     data_UART = UDR0;
     //Ecoa o dado recebido
     UDR0 = data_UART;
-    //Armazena no buffer e incrementa Ìndice
+    //Armazena no buffer e incrementa √≠ndice
     buffer_data_vec[buffer_index++] = data_UART;
 
     // Verifica fim do comando
     if (data_UART == '*'){
 
-        // Reinicia Ìndice do buffer
+        // Reinicia √≠ndice do buffer
         buffer_index = 0;
 
         // Converte caracteres ASCII para inteiro
@@ -628,9 +628,9 @@ ISR(USART0_RX_vect){
         TCNT3 = 0;
         TCNT1 = 0;
 
-        // Inicia Timer1 (estimulaÁ„o)
+        // Inicia Timer1 (estimula√ß√£o)
         TCCR1B = 0x0A;
-		// Marca a estimulaÁ„o na prÛxima (primeira) amostra, assim como È feito nas configs
+		// Marca a estimula√ß√£o na pr√≥xima (primeira) amostra, assim como √© feito nas configs
         PORTD = 0x00;
     }
 }
@@ -642,36 +642,36 @@ ISR(USART0_RX_vect){
  */
 
 /**
- * FunÁ„o principal do sistema
+ * Fun√ß√£o principal do sistema
  *
- * Respons·vel por:
- * - Inicializar o hardware e perifÈricos
- * - Habilitar interrupÁıes globais
- * - Gerenciar o estado de espera entre ciclos de estimulaÁ„o
+ * Respons√°vel por:
+ * - Inicializar o hardware e perif√©ricos
+ * - Habilitar interrup√ß√µes globais
+ * - Gerenciar o estado de espera entre ciclos de estimula√ß√£o
  *
  * Funcionamento:
- * 1. Executa a configuraÁ„o inicial do sistema
- * 2. Habilita interrupÁıes (Timers e UART)
+ * 1. Executa a configura√ß√£o inicial do sistema
+ * 2. Habilita interrup√ß√µes (Timers e UART)
  * 3. Permanece em loop infinito
  *
- * Durante a execuÁ„o:
+ * Durante a execu√ß√£o:
  * - A maior parte do processamento ocorre nas ISRs
  * - O main atua apenas no controle do estado de espera
- * - Garante que os sinais estar„o desligados nesse caso
+ * - Garante que os sinais estar√£o desligados nesse caso
  *
  * Estado de espera (wait = 1):
  * - Ativa o Timer3 para controle do descanso entre janelas
- * - Sinaliza perÌodo de descanso via PORTD
- * - Zera todas as portas de saÌda
+ * - Sinaliza per√≠odo de descanso via PORTD
+ * - Zera todas as portas de sa√≠da
  *
  * _________________________________________________________
  */
 int main(void) {
 
-    // InicializaÁ„o de registradores e perifÈricos
+    // Inicializa√ß√£o de registradores e perif√©ricos
     config();
 
-    // Habilita interrupÁıes globais 
+    // Habilita interrup√ß√µes globais 
     sei();
 
     // Loop principal
@@ -683,10 +683,10 @@ int main(void) {
             // Ativa Timer3 (inicia o descanso)
             TCCR3B = 0x0D;
 
-            // Indica perÌodo de descanso
+            // Indica per√≠odo de descanso
             PORTD = 0x01;
 
-            // Zera todas as saÌdas -> estÌmulos desligados
+            // Zera todas as sa√≠das -> est√≠mulos desligados
             PORTA = 0x00;
             PORTC = 0x00;
             PORTF = 0x00;
