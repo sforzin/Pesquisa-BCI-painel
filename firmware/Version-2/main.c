@@ -1,13 +1,11 @@
-// A wheelchair version
-// Falta implementar a marcação das amostras e o desligamento do pull up
-// Rodar depuração com um sinal básico, registrar vídeo de funcionamento.
+// Stable version, v1, testing...
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
-#include "sinal_base.h" // Deverá se adequar ao nano
+#include "sinal_base.h"
 
 #define F_CPU 16000000UL
 
@@ -21,16 +19,19 @@ volatile unsigned char value;
 volatile unsigned char data_b;
 volatile unsigned char data_c;
 
-volatile unsigned char system_control;
-volatile unsigned char system_mode;
+volatile unsigned char system_control; 
+volatile unsigned char system_mode = 0x00;
 unsigned char buffer_index = 0;
-unsigned char buffer_data_vec[4];
+char buffer_data_vec[4];
 char data_UART;
 
 void config(){
 	// Portas
-	DDRB |= 0x0F
-	DDRC |= 0x0F
+	DDRB |= 0x0F;
+	DDRC |= 0x0F;
+	DDRD |= 0X04; // PD2 marca o sinal de estimulação
+	PORTD = (1<<2);
+	MCUCR |= (1 << PUD); // Desliga os resistores de pull-UP das portas
 	//UART
 	UCSR0A = 0x02;
 	UCSR0B = 0x98;
@@ -47,10 +48,9 @@ void config(){
 	TIMSK1 |= (1 << OCIE1A);
 	
 	// PRIMEIRA AMOSTRA
-	
 	part_index  = lut_add >> 8;
 	part_offset = lut_add & 0xFF;
-	value = pgm_read_byte_far((uint32_t)(&signal_parts[part_index][part_offset]));
+	value = pgm_read_byte((uint16_t)(&signal_parts[part_index][part_offset]));
 	data_b = (value & 0xf0) >> 4;
 	data_c = (value & 0x0f);
 	lut_add++;
@@ -64,17 +64,17 @@ ISR(TIMER1_COMPA_vect) {
 	if (lut_add >= signal_len) {
 		lut_add = 0;      // Reinicia índice da LUT
 		TCCR1B = 0x08;    // Para o Timer1 (sem clock)
+		PORTD = (1<<2);   // Marca fim da janela
 	}
 	// New update method (EVOLUÇÃO DEPOIS DE EA701 :) de um while maluco para um for optimize ? maybe rsrs)
 	part_index  = lut_add >> 8;
 	part_offset = lut_add & 0xFF;
-	value = pgm_read_byte_far((uint32_t)(&signal_parts[part_index][part_offset]));
+	value = pgm_read_byte((uint16_t)(&signal_parts[part_index][part_offset]));
 	// Separação dos bytes
 	// Vai vir do HEADER um byte onde 0xMSB.LSB -- MSB porta b LSB porta c
 	data_b = (value & 0xf0) >> 4; // Fazer um cast para garantir
-	data_c = (value & 0x0f);
+	data_c = value & 0x0f;
 	lut_add++;
-	}
 }
 
 ISR(USART0_RX_vect){
@@ -119,6 +119,7 @@ int main(void){
 					DDRB = 0x0F;
 					DDRC = 0x0F;
 					TCCR1B = 0x0A;
+					break;
 				case('2'):
 					TCCR1B = 0x0A;
 					break;
@@ -126,10 +127,12 @@ int main(void){
 					TCCR1B = 0x08; // Stop do sistema total
 					DDRB = 0x0F; // Ligação forçada de todos os estímulos
 					DDRC = 0x0F;
-					lut_add = 0x00
+					lut_add = 0x00;
+					break;
 				default: break;
 			}
 			system_mode = 0x00;
+			PORTD |= (0<<2); // Marca o início da janela
 		}
 	}
 }
